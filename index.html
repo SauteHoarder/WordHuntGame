@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Hunt Game</title>
+    <link rel="stylesheet" href="EasyDifficulty.css" />
+  </head>
+  <body>
+    <h1>Word Hunt Game</h1>
+    <div class="grid-overlay">
+      <!-- Auto-generate grid cells -->
+    </div>
+    <section id="instructions">
+      <h2>How to Play</h2>
+      <p>
+        Your goal is to find all the hidden words in the grid. These words are
+        listed in the "Words to Find" section.
+      </p>
+      <ol>
+        <li>Click and drag on the letters in the grid to select them.</li>
+        <li>
+          Words can be placed <strong>horizontally</strong>,
+          <strong>vertically</strong>, or <strong>diagonally</strong>.
+        </li>
+        <li>Selected letters must form a straight line — no zigzagging.</li>
+        <li>
+          When a correct word is found, it will be highlighted and added to the
+          "Found Words" list.
+        </li>
+        <li>
+          Each found word also includes a short explanation in the "Word
+          Explanations" section.
+        </li>
+        <li>Find all words to complete the game!</li>
+      </ol>
+    </section>
+    <div id="game-wrapper"></div>
+    <div id="game-container">
+      <div id="word-grid"></div>
+      <div id="word-list">
+        <h2>Find these words:</h2>
+        <ul id="words-to-find"></ul>
+        <h3>Found Words:</h3>
+        <ul id="found-words"></ul>
+      </div>
+    </div>
+    <!-- Separate Explanation Section -->
+    <div id="word-explanation-container">
+      <h3>Word Explanations:</h3>
+      <ul id="word-explanations"></ul>
+    </div>
+    <script src="EasyDifficulty.js"></script>
+  </body>
+</html>
