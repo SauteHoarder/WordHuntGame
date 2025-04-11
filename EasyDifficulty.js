@@ -1,4 +1,4 @@
-const words = ["PROGRAMMER", "VARIABLE", "FUNCTION", "LOOP", "ALGORITHM", "INT", "PROBLEMANALYSIS"];
+const words = ["PROGRAMMER", "VARIABLE", "FUNCTION", "LOOP", "ALGORITHM", "INT", "PROBLEMANALYSIS", "JSSYNTAX"];
 const rows = 15; // Grid height
 const cols = 15; // Grid width
 let grid = Array.from({ length: rows }, () => Array(cols).fill(""));
@@ -15,7 +15,9 @@ const foundWordsSet = new Set(); // Set to store found words
 // Display words to find
 words.forEach(word => {
     const li = document.createElement("li");
-    li.textContent = word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" : word;
+    li.textContent = 
+    word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
+    word === "JSSYNTAXX" ? "JAVASCRIPT SYNTAX" : word;
     wordListContainer.appendChild(li);
 });
 
@@ -262,7 +264,9 @@ function moveToFoundWords(word) {
 
     // Add explanation in the separate container
     if (wordExplanations[word]) {
-        const displayWord = word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" : word;
+        const displayWord =
+    word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
+    word ===  "JSSYNTAX" ? "JAVASCRIPT SYNTAX": word;
         const explanationItem = document.createElement("li");
         explanationItem.innerHTML = `<strong>${displayWord}:</strong> ${wordExplanations[word]}`;
         explanationList.appendChild(explanationItem);
@@ -296,7 +300,8 @@ const wordExplanations = {
     "LOOP": "Is a structure used to repeat a block of code multiple times.",
     "ALGORITHM": "Is set of steps to solve a problem",
     "INT": "Is a primitive data type used to store whole numbers without decimal points.",
-    "PROBLEMANALYSIS": "Is the first step in writing a JavaScript program, where you figure out what the program needs to do."
+    "PROBLEMANALYSIS": "Is the first step in writing a JavaScript program, where you figure out what the program needs to do.",
+    "JSSYNTAX": "Is a set of rules that lets you tell a computer what to do in JavaScript."
 };
 
 // Select explanation container
@@ -312,12 +317,16 @@ function moveToFoundWords(word) {
 
     // Add to "Found Words" list
     const li = document.createElement("li");
-    li.textContent = word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" : word;
+    li.textContent =
+        word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
+        word === "JSSYNTAX" ? "JAVASCRIPT SYNTAX" : word;
     foundWordsContainer.appendChild(li);
 
     // Add explanation in the separate container
     if (wordExplanations[word]) {
-        const displayWord = word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" : word;
+        const displayWord = 
+        word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
+        word ===  "JSSYNTAX" ? "JAVASCRIPT SYNTAX": word;
         const explanationItem = document.createElement("li");
         explanationItem.innerHTML = `<strong>${displayWord}:</strong> ${wordExplanations[word]}`;
         explanationList.appendChild(explanationItem);
