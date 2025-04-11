@@ -96,15 +96,48 @@ grid.forEach((row, r) => {
             isMouseDown = false;
             finalizeDragSelection();
         });
+        // Touch support
+// Touch-based event handlers
+cell.addEventListener("touchstart", (e) => {
+    if (cell.classList.contains("found")) return;
+    isMouseDown = true;
+    resetSelection();
+    startRow = null;
+    startCol = null;
+    directionLocked = null;
+    dragSelectCell(cell);
+    e.preventDefault(); // Prevent default to avoid scrolling
+}, { passive: false });
+
+cell.addEventListener("touchmove", (e) => {
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && target.classList.contains("cell") && !target.classList.contains("found")) {
+        dragSelectCell(target);
+    }
+    e.preventDefault(); // Prevent scrolling
+}, { passive: false });
+
+cell.addEventListener("touchend", () => {
+    isMouseDown = false;
+    finalizeDragSelection();
+});
+
 
         gridContainer.appendChild(cell);
     });
 });
 
-document.addEventListener("mouseup", () => {
+document.addEventListener("touchend", () => {
     isMouseDown = false;
     finalizeDragSelection();
 });
+document.addEventListener("mouseup", () => {
+    isMouseDown = false;
+    finalizeDragSelection();
+
+});
+
 
 let startRow = null;
 let startCol = null;
@@ -132,6 +165,33 @@ function dragSelectCell(cell) {
         else if (dCol === 0) directionLocked = "vertical";
         else if (Math.abs(dRow) === Math.abs(dCol)) directionLocked = "diagonal";
         else return; // Not a valid direction
+    }
+
+    let lastCell = selectedCells[selectedCells.length - 1];
+    let lastRow = parseInt(lastCell.dataset.row);
+    let lastCol = parseInt(lastCell.dataset.col);
+
+    // Generate all intermediate cells between last and current
+    let stepRow = row > lastRow ? 1 : (row < lastRow ? -1 : 0);
+    let stepCol = col > lastCol ? 1 : (col < lastCol ? -1 : 0);
+
+    let r = lastRow + stepRow;
+    let c = lastCol + stepCol;
+
+    while (r !== row + stepRow || c !== col + stepCol) {
+        let nextCell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+        if (!nextCell || nextCell.classList.contains("found")) break;
+
+        if (
+            (directionLocked === "horizontal" && r === startRow) ||
+            (directionLocked === "vertical" && c === startCol) ||
+            (directionLocked === "diagonal" && Math.abs(r - startRow) === Math.abs(c - startCol))
+        ) {
+            addCellToSelection(nextCell);
+        }
+
+        r += stepRow;
+        c += stepCol;
     }
 
     // Enforce direction lock
