@@ -11,6 +11,16 @@
     <div class="grid-overlay">
       <!-- Auto-generate grid cells -->
     </div>
+    <label for="selection-mode">Selection Mode:</label>
+    <select id="selection-mode">
+      <option value="drag">Drag to select</option>
+      <option value="manual">Tap to select (manual)</option>
+    </select>
+
+    <button id="check-word" style="display: none">Check Word</button>
+
+    <button id="check-word" style="display: none">Check Word</button>
+
     <section id="instructions">
       <h2>How to Play</h2>
       <p>
@@ -20,10 +30,17 @@
       <ol>
         <li>Click and drag on the letters in the grid to select them.</li>
         <li>
+          You can manually select cells by choosing the tap-to-select on the
+          selection mode. Tap the first letter of the word and the last letter of it to automatically check the word.
+        </li>
+        <li>
           Words can be placed <strong>horizontally</strong>,
           <strong>vertically</strong>, or <strong>diagonally</strong>.
         </li>
         <li>Selected letters must form a straight line — no zigzagging.</li>
+        <li>
+          You can zoom <strong>in-and-out</strong> to see the whole grid better.
+        </li>
         <li>
           When a correct word is found, it will be highlighted and added to the
           "Found Words" list.
