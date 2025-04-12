@@ -1,52 +1,86 @@
-const words = ["PROGRAMMER", "VARIABLE", "FUNCTION", "LOOP", "ALGORITHM", "INT", "PROBLEMANALYSIS", "JSSYNTAX"];
-const rows = 15; // Grid height
-const cols = 15; // Grid width
+
+
+const words = ["PROGRAMMER", "VARIABLE", "FUNCTION", "LOOP", "ALGORITHM", "INT", "PROBLEMANALYSIS", "JAVASCRIPTSYNTAX", "BREAKSTATEMENT"];
+const rows = 20;
+const cols = 20;
 let grid = Array.from({ length: rows }, () => Array(cols).fill(""));
 
 const gridContainer = document.getElementById("word-grid");
-gridContainer.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+gridContainer.style.gridTemplateColumns = `repeat(${cols}, 34px)`;
 
 const wordListContainer = document.getElementById("words-to-find");
 const foundWordsContainer = document.getElementById("found-words");
+const explanationList = document.getElementById("word-explanations");
+const selectionDropdown = document.getElementById("selection-mode");
+const checkWordButton = document.getElementById("check-word");
 
-const requiredWords = new Set(words); // Set of required words to find
-const foundWordsSet = new Set(); // Set to store found words
+let selectionMode = "drag";
+let isMouseDown = false;
+let selectedCells = [];
+let selectedWord = "";
+let startRow = null;
+let startCol = null;
+let directionLocked = null;
 
-// Display words to find
-words.forEach(word => {
-    const li = document.createElement("li");
-    li.textContent = 
-    word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
-    word === "JSSYNTAXX" ? "JAVASCRIPT SYNTAX" : word;
-    wordListContainer.appendChild(li);
+const requiredWords = new Set(words);
+const foundWordsSet = new Set();
+
+selectionDropdown.addEventListener("change", (e) => {
+    selectionMode = e.target.value;
+    resetSelection();
+    checkWordButton.style.display = selectionMode === "manual" ? "inline-block" : "none";
 });
 
-// Place words randomly without overlap
-function placeWord(word) {
-    const directions = ["horizontal", "vertical", "diagonal"];
-    let placed = false;
+checkWordButton.addEventListener("click", () => {
+    finalizeDragSelection();
+});
 
-    while (!placed) {
-        const direction = directions[Math.floor(Math.random() * directions.length)];
+// Render word list
+function renderWordList() {
+    wordListContainer.innerHTML = "";
+    words.forEach(word => {
+        const li = document.createElement("li");
+        li.textContent = word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
+                         word === "JAVASCRIPTSYNTAX" ? "JAVASCRIPT SYNTAX" :
+                         word === "BREAKSTATEMENT" ? "BREAK STATEMENT" :
+                          word;
+        wordListContainer.appendChild(li);
+    });
+}
+renderWordList();
+
+// Word placement
+function placeAllWords() {
+    const guaranteedHorizontal = words.slice(0, 3);
+    const remaining = words.slice(3);
+    guaranteedHorizontal.forEach(word => placeWord(word, "horizontal"));
+    remaining.forEach(word => placeWord(word));
+}
+
+function placeWord(word, forceDirection = null) {
+    const directions = ["horizontal", "vertical", "diagonal"];
+    let placed = false, attempts = 0;
+
+    while (!placed && attempts < 100) {
+        const direction = forceDirection || directions[Math.floor(Math.random() * directions.length)];
         let row = Math.floor(Math.random() * rows);
         let col = Math.floor(Math.random() * cols);
 
         if (direction === "horizontal" && col + word.length <= cols && checkFit(row, col, word.length, 0, 1)) {
             for (let i = 0; i < word.length; i++) grid[row][col + i] = word[i];
             placed = true;
-        } 
-        else if (direction === "vertical" && row + word.length <= rows && checkFit(row, col, word.length, 1, 0)) {
+        } else if (direction === "vertical" && row + word.length <= rows && checkFit(row, col, word.length, 1, 0)) {
             for (let i = 0; i < word.length; i++) grid[row + i][col] = word[i];
             placed = true;
-        } 
-        else if (direction === "diagonal" && row + word.length <= rows && col + word.length <= cols && checkFit(row, col, word.length, 1, 1)) {
+        } else if (direction === "diagonal" && row + word.length <= rows && col + word.length <= cols && checkFit(row, col, word.length, 1, 1)) {
             for (let i = 0; i < word.length; i++) grid[row + i][col + i] = word[i];
             placed = true;
         }
+
+        attempts++;
     }
 }
 
-// Check if space is free before placing a word
 function checkFit(row, col, length, rowStep, colStep) {
     for (let i = 0; i < length; i++) {
         if (grid[row + i * rowStep][col + i * colStep] !== "") return false;
@@ -54,102 +88,113 @@ function checkFit(row, col, length, rowStep, colStep) {
     return true;
 }
 
-// Place all words
-words.forEach(placeWord);
+placeAllWords();
 
-// Fill empty spaces with random letters
 for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
         if (grid[r][c] === "") grid[r][c] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
     }
 }
 
-let isMouseDown = false;
-let selectedCells = [];
-let selectedWord = "";
-// Render grid
-gridContainer.innerHTML = ""; // Clear old grid if any
-grid.forEach((row, r) => {
-    row.forEach((letter, c) => {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.textContent = letter;
-        cell.dataset.row = r;
-        cell.dataset.col = c;
+function renderGrid() {
+    gridContainer.innerHTML = "";
+    grid.forEach((row, r) => {
+        row.forEach((letter, c) => {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.textContent = letter;
+            cell.dataset.row = r;
+            cell.dataset.col = c;
 
-        // Drag-based event handlers
-        cell.addEventListener("mousedown", () => {
-            if (cell.classList.contains("found")) return;
-            isMouseDown = true;
-            resetSelection();
-            startRow = null;
-            startCol = null;
-               directionLocked = null;
-            dragSelectCell(cell);
-        });
+            cell.addEventListener("mousedown", () => {
+                if (cell.classList.contains("found")) return;
+            
+                if (selectionMode === "manual") {
+                    if (selectedCells.length === 0) {
+                        startRow = r;
+                        startCol = c;
+                        directionLocked = null;
+                    }
+                    dragSelectCell(cell);
+                } else {
+                    isMouseDown = true;
+                    resetSelection();
+                    startRow = r;
+                    startCol = c;
+                    dragSelectCell(cell);
+                }
+            });
+            
 
-        cell.addEventListener("mouseover", () => {
-            if (isMouseDown && !cell.classList.contains("found")) {
-                dragSelectCell(cell);
-            }
-        });
+            cell.addEventListener("click", () => {
+                if (selectionMode === "manual" && !cell.classList.contains("found")) {
+                    dragSelectCell(cell);
+                }
+            });
 
-        cell.addEventListener("mouseup", () => {
-            isMouseDown = false;
-            finalizeDragSelection();
+            cell.addEventListener("mouseover", () => {
+                if (isMouseDown && !cell.classList.contains("found")) dragSelectCell(cell);
+            });
+
+            cell.addEventListener("mouseup", () => {
+                isMouseDown = false;
+                finalizeDragSelection();
+            });
+
+            gridContainer.appendChild(cell);
         });
-        // Touch support
-// Touch-based event handlers
-cell.addEventListener("touchstart", (e) => {
-    if (cell.classList.contains("found")) return;
-    isMouseDown = true;
-    resetSelection();
-    startRow = null;
-    startCol = null;
-    directionLocked = null;
-    dragSelectCell(cell);
-    e.preventDefault(); // Prevent default to avoid scrolling
+    });
+}
+renderGrid();
+
+// Touch handling
+gridContainer.addEventListener("touchstart", (e) => {
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!target || !target.classList.contains("cell") || target.classList.contains("found")) return;
+
+    if (selectionMode === "manual") {
+        if (selectedCells.length === 0) {
+            startRow = parseInt(target.dataset.row);
+            startCol = parseInt(target.dataset.col);
+            directionLocked = null;
+        }
+        dragSelectCell(target);
+    } else {
+        isMouseDown = true;
+        resetSelection();
+        startRow = parseInt(target.dataset.row);
+        startCol = parseInt(target.dataset.col);
+        dragSelectCell(target);
+    }
+    
+    e.preventDefault();
 }, { passive: false });
 
-cell.addEventListener("touchmove", (e) => {
+gridContainer.addEventListener("touchmove", (e) => {
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     if (target && target.classList.contains("cell") && !target.classList.contains("found")) {
         dragSelectCell(target);
     }
-    e.preventDefault(); // Prevent scrolling
+    e.preventDefault();
 }, { passive: false });
 
-cell.addEventListener("touchend", () => {
+gridContainer.addEventListener("touchend", () => {
     isMouseDown = false;
     finalizeDragSelection();
 });
 
-
-        gridContainer.appendChild(cell);
-    });
-});
-
-document.addEventListener("touchend", () => {
-    isMouseDown = false;
-    finalizeDragSelection();
-});
 document.addEventListener("mouseup", () => {
     isMouseDown = false;
     finalizeDragSelection();
-
 });
 
-
-let startRow = null;
-let startCol = null;
-let directionLocked = null;
-
+// Word selection
 function dragSelectCell(cell) {
     const row = parseInt(cell.dataset.row);
     const col = parseInt(cell.dataset.col);
 
-    // First cell selected — start drag
     if (selectedCells.length === 0) {
         startRow = row;
         startCol = col;
@@ -158,7 +203,6 @@ function dragSelectCell(cell) {
         return;
     }
 
-    // Determine the direction if not already locked
     const dRow = row - startRow;
     const dCol = col - startCol;
 
@@ -166,22 +210,20 @@ function dragSelectCell(cell) {
         if (dRow === 0) directionLocked = "horizontal";
         else if (dCol === 0) directionLocked = "vertical";
         else if (Math.abs(dRow) === Math.abs(dCol)) directionLocked = "diagonal";
-        else return; // Not a valid direction
+        else return;
     }
 
-    let lastCell = selectedCells[selectedCells.length - 1];
-    let lastRow = parseInt(lastCell.dataset.row);
-    let lastCol = parseInt(lastCell.dataset.col);
+    const lastCell = selectedCells[selectedCells.length - 1];
+    const lastRow = parseInt(lastCell.dataset.row);
+    const lastCol = parseInt(lastCell.dataset.col);
 
-    // Generate all intermediate cells between last and current
     let stepRow = row > lastRow ? 1 : (row < lastRow ? -1 : 0);
     let stepCol = col > lastCol ? 1 : (col < lastCol ? -1 : 0);
-
     let r = lastRow + stepRow;
     let c = lastCol + stepCol;
 
     while (r !== row + stepRow || c !== col + stepCol) {
-        let nextCell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+        const nextCell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
         if (!nextCell || nextCell.classList.contains("found")) break;
 
         if (
@@ -196,12 +238,11 @@ function dragSelectCell(cell) {
         c += stepCol;
     }
 
-    // Enforce direction lock
-    if (directionLocked === "horizontal" && row === startRow) {
-        addCellToSelection(cell);
-    } else if (directionLocked === "vertical" && col === startCol) {
-        addCellToSelection(cell);
-    } else if (directionLocked === "diagonal" && Math.abs(row - startRow) === Math.abs(col - startCol)) {
+    if (
+        (directionLocked === "horizontal" && row === startRow) ||
+        (directionLocked === "vertical" && col === startCol) ||
+        (directionLocked === "diagonal" && Math.abs(row - startRow) === Math.abs(col - startCol))
+    ) {
         addCellToSelection(cell);
     }
 }
@@ -215,7 +256,7 @@ function addCellToSelection(cell) {
 }
 
 function finalizeDragSelection() {
-    if (selectedCells.length > 1 && isAligned() && words.includes(selectedWord)) {
+    if (selectedCells.length > 1 && isAligned() && requiredWords.has(selectedWord) && !foundWordsSet.has(selectedWord)) {
         selectedCells.forEach(cell => {
             cell.style.backgroundColor = "lightgreen";
             cell.classList.add("found");
@@ -235,64 +276,15 @@ function resetSelection() {
     directionLocked = null;
 }
 
-
-// Check if selected letters are in a straight line
 function isAligned() {
-    if (selectedCells.length < 2) return false;
-
-    let rowPositions = selectedCells.map(cell => parseInt(cell.dataset.row));
-    let colPositions = selectedCells.map(cell => parseInt(cell.dataset.col));
-
-    let sameRow = rowPositions.every((r, _, arr) => r === arr[0]);
-    let sameCol = colPositions.every((c, _, arr) => c === arr[0]);
-
-    let diagonal = rowPositions.every((r, i) => r - rowPositions[0] === colPositions[i] - colPositions[0]);
-
+    const rows = selectedCells.map(c => parseInt(c.dataset.row));
+    const cols = selectedCells.map(c => parseInt(c.dataset.col));
+    const sameRow = rows.every(r => r === rows[0]);
+    const sameCol = cols.every(c => c === cols[0]);
+    const diagonal = rows.every((r, i) => r - rows[0] === cols[i] - cols[0]);
     return sameRow || sameCol || diagonal;
 }
 
-// Move to found words function
-function moveToFoundWords(word) {
-    if (!requiredWords.has(word) || foundWordsSet.has(word)) return; // Ignore if not required or already found
-    foundWordsSet.add(word); // Add to found words
-    updateWordList();
-
-    // Add to "Found Words" list
-    const li = document.createElement("li");
-    li.textContent = word;
-    foundWordsContainer.appendChild(li);
-
-    // Add explanation in the separate container
-    if (wordExplanations[word]) {
-        const displayWord =
-    word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
-    word ===  "JSSYNTAX" ? "JAVASCRIPT SYNTAX": word;
-        const explanationItem = document.createElement("li");
-        explanationItem.innerHTML = `<strong>${displayWord}:</strong> ${wordExplanations[word]}`;
-        explanationList.appendChild(explanationItem);
-    }    
-}
-
-// Update word list function
-function updateWordList() {
-    while (wordListContainer.firstChild) {
-        wordListContainer.removeChild(wordListContainer.firstChild);
-    }
-
-    words.forEach(word => {
-        if (!foundWordsSet.has(word)) {
-            const li = document.createElement("li");
-            li.textContent = word;
-            wordListContainer.appendChild(li);
-        }
-    });
-
-    if (foundWordsSet.size === requiredWords.size) {
-        wordListContainer.style.display = ""; // Hide the word list if all words are found
-    }
-}
-
-// Dictionary of word explanations
 const wordExplanations = {
     "PROGRAMMER": "Is a person who writes the instruction for a computer.",
     "VARIABLE": "A container that holds a value in JavaScript.",
@@ -301,35 +293,40 @@ const wordExplanations = {
     "ALGORITHM": "Is set of steps to solve a problem",
     "INT": "Is a primitive data type used to store whole numbers without decimal points.",
     "PROBLEMANALYSIS": "Is the first step in writing a JavaScript program, where you figure out what the program needs to do.",
-    "JSSYNTAX": "Is a set of rules that lets you tell a computer what to do in JavaScript."
+    "JAVASCRIPTSYNTAX": "Is a set of rules that lets you tell a computer what to do in JavaScript.",
+    "BREAKSTATEMENT": "Does not skip a loop of iteration, rather it exits the loop entirely."
 };
 
-// Select explanation container
-const explanationList = document.getElementById("word-explanations");
-
-
-// Modify function to append explanations separately
 function moveToFoundWords(word) {
-    words.splice(words.indexOf(word), 1); // Remove from words list
+    if (!requiredWords.has(word) || foundWordsSet.has(word)) return;
+    foundWordsSet.add(word);
 
-    // Update "Find These Words" list
-    updateWordList();
-
-    // Add to "Found Words" list
     const li = document.createElement("li");
-    li.textContent =
-        word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
-        word === "JSSYNTAX" ? "JAVASCRIPT SYNTAX" : word;
+    li.textContent = word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
+                     word === "JAVASCRIPTSYNTAX" ? "JAVASCRIPT SYNTAX" :
+                     word === "BREAKSTATEMENT" ? "BREAK STATEMENT" :
+                    word;
     foundWordsContainer.appendChild(li);
 
-    // Add explanation in the separate container
     if (wordExplanations[word]) {
-        const displayWord = 
-        word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
-        word ===  "JSSYNTAX" ? "JAVASCRIPT SYNTAX": word;
         const explanationItem = document.createElement("li");
-        explanationItem.innerHTML = `<strong>${displayWord}:</strong> ${wordExplanations[word]}`;
+        explanationItem.innerHTML = `<strong>${li.textContent}:</strong> ${wordExplanations[word]}`;
         explanationList.appendChild(explanationItem);
     }
+
+    updateWordList();
 }
 
+function updateWordList() {
+    wordListContainer.innerHTML = "";
+    words.forEach(word => {
+        if (!foundWordsSet.has(word)) {
+            const li = document.createElement("li");
+            li.textContent = word === "PROBLEMANALYSIS" ? "PROBLEM ANALYSIS" :
+                             word === "JAVASCRIPTSYNTAX" ? "JAVASCRIPT SYNTAX" : 
+                             word === "BREAKSTATEMENT" ? "BREAK STATEMENT" :
+                             word;
+            wordListContainer.appendChild(li);
+        }
+    });
+}
